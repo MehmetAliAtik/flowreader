@@ -7,14 +7,21 @@ files:
   - dist
   - dist-electron
 win:
-  target: nsis
+  target:
+    - target: nsis
+      arch: x64
   icon: build/icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: FlowReader
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
 mac:
   target: dmg
-  icon: build/icon.icns
+  icon: build/icon.png
 linux:
   target: AppImage
   icon: build/icon.png
