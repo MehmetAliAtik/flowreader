@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { db, type Book } from '@/db/database'
 import { useReaderStore } from '@/stores/readerStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -6,16 +7,25 @@ import { useRSVP } from '@/hooks/useRSVP'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import { WordDisplay } from '@/components/WordDisplay'
 import { ReaderControls } from '@/components/ReaderControls'
+import { BookmarkToast } from '@/components/BookmarkToast'
+import { BookmarkPanel } from '@/components/BookmarkPanel'
 
 interface ReaderProps {
   book: Book
   onExit: () => void
 }
 
+interface PendingBookmark {
+  wordIndex: number
+}
+
 export function Reader({ book, onExit }: ReaderProps) {
   const { wpm: settingsWpm, chunkSize } = useSettingsStore()
   const { currentIndex, isPlaying, wpm, words } = useReaderStore()
   const { play, pause, togglePlay, skipForward, skipBackward, seekTo, setWpm } = useRSVP()
+
+  const [showPanel, setShowPanel] = useState(false)
+  const [pendingBookmark, setPendingBookmark] = useState<PendingBookmark | null>(null)
 
   // Track session for stats
   const sessionRef = useRef({
@@ -54,7 +64,6 @@ export function Reader({ book, onExit }: ReaderProps) {
         ? Math.round((wordsRead / durationMs) * 60_000)
         : store.wpm
 
-      // Fire-and-forget (unmount, no await)
       db.books.update(book.id, {
         lastWordIndex: endIndex,
         lastReadAt: new Date(),
@@ -90,30 +99,39 @@ export function Reader({ book, onExit }: ReaderProps) {
     }
   }, [book.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keyboard shortcuts
-  const keyHandlers = useMemo(() => ({
-    ' ':           () => togglePlay(),
-    'ArrowLeft':   () => skipBackward(10),
-    'ArrowRight':  () => skipForward(10),
-    'ArrowUp':     () => setWpm(useReaderStore.getState().wpm + 25),
-    'ArrowDown':   () => setWpm(useReaderStore.getState().wpm - 25),
-    'Escape':      () => { pause(); onExit() },
-    'b':           () => addBookmark(),
-    'f':           () => toggleFullscreen(),
-  }), [togglePlay, skipForward, skipBackward, setWpm, pause, onExit]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useKeyboard(keyHandlers)
-
-  async function addBookmark() {
+  // --- Bookmark actions ---
+  function triggerAddBookmark() {
     const idx = useReaderStore.getState().currentIndex
+    // Pause reading while toast is visible so user can type comfortably
+    if (useReaderStore.getState().isPlaying) pause()
+    setPendingBookmark({ wordIndex: idx })
+  }
+
+  async function confirmBookmark(note: string) {
+    if (!pendingBookmark) return
+    const idx = pendingBookmark.wordIndex
     await db.bookmarks.add({
       bookId: book.id,
       wordIndex: idx,
-      label: `~word ${idx}`,
+      label: `~word ${idx.toLocaleString()}`,
+      note: note.trim() || undefined,
       isAutoResume: false,
       createdAt: new Date(),
     })
-    // TODO Phase 6: show toast with note input
+    setPendingBookmark(null)
+  }
+
+  function dismissBookmark() {
+    setPendingBookmark(null)
+  }
+
+  function handleJumpToBookmark(wordIndex: number) {
+    seekTo(wordIndex)
+    setShowPanel(false)
+  }
+
+  function togglePanel() {
+    setShowPanel((v) => !v)
   }
 
   function toggleFullscreen() {
@@ -124,6 +142,33 @@ export function Reader({ book, onExit }: ReaderProps) {
     }
   }
 
+  // --- Keyboard shortcuts ---
+  const keyHandlers = useMemo(() => ({
+    ' ':        () => togglePlay(),
+    'ArrowLeft':  () => skipBackward(10),
+    'ArrowRight': () => skipForward(10),
+    'ArrowUp':    () => setWpm(useReaderStore.getState().wpm + 25),
+    'ArrowDown':  () => setWpm(useReaderStore.getState().wpm - 25),
+    'Escape':     () => { pause(); onExit() },
+    'b':          () => triggerAddBookmark(),
+    'f':          () => toggleFullscreen(),
+  }), [togglePlay, skipForward, skipBackward, setWpm, pause, onExit]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Ctrl+B wired separately (modifier key)
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'b' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        togglePanel()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Disable regular shortcuts while bookmark toast is visible
+  useKeyboard(keyHandlers, pendingBookmark !== null)
+
   // Non-sentinel total for progress calculation
   const realTotal = useMemo(
     () => words.filter((w) => w !== '\n\n').length,
@@ -131,31 +176,57 @@ export function Reader({ book, onExit }: ReaderProps) {
   )
 
   return (
-    <div className="flex-1 relative overflow-hidden bg-cream dark:bg-charcoal">
-      {/* Word display — fills all space */}
-      <div className="absolute inset-0 flex items-center justify-center px-8">
+    <div className="flex-1 relative overflow-hidden reader-bg">
+      {/* Word display */}
+      <div
+        className="absolute inset-0 flex items-center justify-center px-8"
+        style={{ paddingRight: showPanel ? '18rem' : undefined }}
+      >
         <WordDisplay />
       </div>
 
-      {/* Controls overlay (progress bar + bottom bar) */}
+      {/* Controls overlay */}
       <ReaderControls
         isPlaying={isPlaying}
         wpm={wpm}
         currentIndex={currentIndex}
         totalWords={realTotal}
+        bookTitle={book.title}
         onTogglePlay={togglePlay}
         onSkipForward={skipForward}
         onSkipBackward={skipBackward}
         onSetWpm={setWpm}
         onSeek={seekTo}
+        onTogglePanel={togglePanel}
+        showPanel={showPanel}
       />
 
-      {/* Tap center to play/pause on touch */}
-      <div
-        className="absolute inset-0 z-10 cursor-pointer"
-        onClick={togglePlay}
-        style={{ pointerEvents: 'none' }} // let controls handle mouse, keyboard handles keys
-      />
+      {/* Bookmark panel */}
+      <AnimatePresence>
+        {showPanel && (
+          <BookmarkPanel
+            bookId={book.id}
+            totalWords={realTotal}
+            onJump={handleJumpToBookmark}
+            onClose={() => setShowPanel(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Bookmark toast (bottom-right) */}
+      <div className="absolute bottom-24 right-6 z-40 pointer-events-none">
+        <AnimatePresence>
+          {pendingBookmark && (
+            <div className="pointer-events-auto">
+              <BookmarkToast
+                wordIndex={pendingBookmark.wordIndex}
+                onConfirm={confirmBookmark}
+                onDismiss={dismissBookmark}
+              />
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

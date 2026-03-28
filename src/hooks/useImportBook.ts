@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { usePdfParser } from './usePdfParser'
 import { db } from '@/db/database'
 import { titleFromFileName } from '@/utils/textProcessor'
+import { useToastStore } from '@/stores/toastStore'
 
 export function useImportBook(onSuccess?: () => void) {
   const { parsePdf, isLoading } = usePdfParser()
@@ -10,6 +11,7 @@ export function useImportBook(onSuccess?: () => void) {
   const importFromPath = useCallback(
     async (filePath: string, fileName: string) => {
       setError(null)
+      const { addToast } = useToastStore.getState()
       try {
         const title = titleFromFileName(fileName)
         const { words, totalWords, thumbnail } = await parsePdf(filePath)
@@ -23,9 +25,12 @@ export function useImportBook(onSuccess?: () => void) {
           dateAdded: new Date(),
           lastWordIndex: 0,
         })
+        addToast(`"${title}" imported — ${totalWords.toLocaleString()} words`, 'success')
         onSuccess?.()
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Import failed')
+        const msg = err instanceof Error ? err.message : 'Import failed'
+        setError(msg)
+        addToast(msg, 'error')
       }
     },
     [parsePdf, onSuccess],

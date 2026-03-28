@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useReaderStore } from '@/stores/readerStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { getBionicSplit } from '@/utils/bionicSplit'
-import { getAccentColor } from '@/utils/accentColors'
 
 const FONT_FAMILY_MAP: Record<string, string> = {
   literata:     '"Literata", Georgia, serif',
@@ -30,9 +29,9 @@ function getContextWords(words: string[], start: number, count: number, dir: 1 |
 
 export function WordDisplay() {
   const { words, currentIndex, chunkSize } = useReaderStore()
-  const { fontSize, fontFamily, bionicReading, showContext, accentColor } = useSettingsStore()
+  const { fontSize, fontFamily, bionicReading, showContext } = useSettingsStore()
 
-  const accentHex = getAccentColor(accentColor)
+  const accentHex = 'var(--accent)'
   const fontFamilyCSS = FONT_FAMILY_MAP[fontFamily] ?? FONT_FAMILY_MAP.literata
 
   // Build the display word(s) — filter sentinels from the chunk

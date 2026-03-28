@@ -1,16 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ThemeProvider } from '@/components/ThemeProvider'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { Sidebar, type AppView } from '@/components/Sidebar'
+import { SettingsModal } from '@/components/SettingsModal'
+import { ToastContainer } from '@/components/ui/Toast'
 import { Library } from '@/pages/Library'
+import { Reader } from '@/pages/Reader'
+import { Home } from '@/pages/Home'
+import { Stats } from '@/pages/Stats'
 import { type Book } from '@/db/database'
-import { Moon, Sun, Monitor } from 'lucide-react'
-
-type View = 'library' | 'reader'
+import { useSettingsPersistence } from '@/hooks/useSettingsPersistence'
+import { useResponsive } from '@/hooks/useResponsive'
 
 function App() {
-  const { theme, setTheme } = useSettingsStore()
-  const [view, setView] = useState<View>('library')
+  const [view, setView]             = useState<AppView>('home')
   const [activeBook, setActiveBook] = useState<Book | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
+
+  useSettingsPersistence()
+
+  const { isNarrow } = useResponsive()
+
+  // Ctrl+, → open settings
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === ',' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        setShowSettings((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   function openBook(book: Book) {
     setActiveBook(book)
@@ -19,67 +39,52 @@ function App() {
 
   function goToLibrary() {
     setView('library')
+    setActiveBook(null)
   }
 
-  const themeIcons = {
-    light: <Sun size={15} />,
-    dark: <Moon size={15} />,
-    system: <Monitor size={15} />,
-  }
-
-  const nextTheme = { light: 'dark', dark: 'system', system: 'light' } as const
+  const showSidebar = view !== 'reader'
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-cream text-dark-brown dark:bg-charcoal dark:text-off-white transition-colors duration-200 flex flex-col">
-        {/* Header */}
-        <header className="flex items-center gap-4 px-8 py-3.5 border-b border-current/10 flex-shrink-0 bg-cream/80 dark:bg-charcoal/80 backdrop-blur-sm">
-          <button
-            onClick={goToLibrary}
-            className="text-lg font-bold tracking-tight hover:opacity-70 transition-opacity select-none"
-          >
-            FlowReader
-          </button>
+      <div className="h-screen bg-surface text-ink transition-colors duration-200 flex overflow-hidden"
+           style={{ flexDirection: isNarrow ? 'column' : 'row' }}>
 
-          {view === 'reader' && activeBook && (
-            <>
-              <span className="opacity-25 text-sm">/</span>
-              <span className="text-sm opacity-55 truncate max-w-xs">{activeBook.title}</span>
-            </>
-          )}
-
-          <div className="flex-1" />
-
-          {/* Theme toggle */}
-          <button
-            onClick={() => setTheme(nextTheme[theme])}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-current/15 bg-current/5 hover:bg-current/10 transition-colors text-sm font-medium"
-            title={`Theme: ${theme}`}
-          >
-            {themeIcons[theme]}
-            <span className="capitalize text-xs opacity-70">{theme}</span>
-          </button>
-        </header>
+        {/* Sidebar / top bar — hidden in reader */}
+        {showSidebar && (
+          isNarrow ? (
+            <Sidebar
+              currentView={view}
+              onNavigate={setView}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          ) : (
+            <Sidebar
+              currentView={view}
+              onNavigate={setView}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          )
+        )}
 
         {/* Main content */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {view === 'library' && <Library onOpenBook={openBook} />}
+        <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {view === 'home' && (
+            <Home onOpenBook={openBook} onNavigateToLibrary={() => setView('library')} />
+          )}
+          {view === 'library' && (
+            <Library onOpenBook={openBook} />
+          )}
           {view === 'reader' && activeBook && (
-            <div className="flex-1 flex items-center justify-center opacity-40">
-              <div className="text-center">
-                <p className="text-lg font-medium">{activeBook.title}</p>
-                <p className="text-sm mt-2">Reader coming in Phase 4</p>
-                <button
-                  onClick={goToLibrary}
-                  className="mt-4 px-4 py-2 rounded-lg bg-current/10 text-sm hover:bg-current/15 transition-colors"
-                >
-                  ← Back to Library
-                </button>
-              </div>
-            </div>
+            <Reader book={activeBook} onExit={goToLibrary} />
+          )}
+          {view === 'stats' && (
+            <Stats />
           )}
         </main>
       </div>
+
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+      <ToastContainer />
     </ThemeProvider>
   )
 }

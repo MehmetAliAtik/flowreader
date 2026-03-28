@@ -1,9 +1,110 @@
+@import './fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Color system ────────────────────────────────────────────── */
 @layer base {
+  :root {
+    --bg-primary:   #F5F0E8;
+    --bg-secondary: #EDE7DB;
+    --bg-elevated:  #FDFAF5;
+    --bg-reader:    #FAF7F2;
+
+    --text-primary:   #2C2420;
+    --text-secondary: #6B5E54;
+    --text-tertiary:  #A89888;
+    --text-ghost:     #C8BDB0;
+
+    /* Accent is overridden at runtime by ThemeProvider */
+    --accent:      #B8860B;
+    --accent-soft: #B8860B18;
+    --accent-glow: #B8860B33;
+
+    --border:  #DDD5C8;
+    --shadow:  #2C242010;
+    --success: #6B8F60;
+    --danger:  #C47055;
+  }
+
+  .dark {
+    --bg-primary:   #1C1A17;
+    --bg-secondary: #242119;
+    --bg-elevated:  #2D2A22;
+    --bg-reader:    #1A1815;
+
+    --text-primary:   #E8E2D8;
+    --text-secondary: #A89C8E;
+    --text-tertiary:  #6B6158;
+    --text-ghost:     #4A443C;
+
+    --accent:      #D4A853;
+    --accent-soft: #D4A85318;
+    --accent-glow: #D4A85333;
+
+    --border:  #3A352D;
+    --shadow:  #00000030;
+    --success: #8AAF7E;
+    --danger:  #D4836B;
+  }
+
+  /* ─── Typography base ────────────────────────────────────── */
+  html {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+  }
+
   body {
     transition: background-color 200ms ease, color 200ms ease;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Literata', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* ─── Custom scrollbar ────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+  /* ─── Focus rings ─────────────────────────────────────────── */
+  :focus-visible {
+    outline: 2px solid var(--accent-glow);
+    outline-offset: 2px;
+  }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────── */
+@layer utilities {
+  /* Paper texture — subtle SVG noise at 3% */
+  .paper-texture {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
+
+  /* Reader vignette overlay */
+  .reader-bg {
+    background: radial-gradient(
+      ellipse at center,
+      var(--bg-reader) 0%,
+      color-mix(in srgb, var(--bg-reader) 85%, var(--bg-primary)) 100%
+    );
+  }
+
+  /* Small label caps */
+  .label-caps {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
   }
 }
