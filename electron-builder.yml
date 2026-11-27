@@ -8,6 +8,12 @@ files:
   - dist-electron
   - LICENSE
   - THIRD-PARTY-NOTICES.md
+  # Optional native canvas pulled in by pdfjs-dist; the app does not use it.
+  - "!node_modules/@napi-rs/**"
+# Also place the license files next to the app, where users can read them.
+extraResources:
+  - LICENSE
+  - THIRD-PARTY-NOTICES.md
 win:
   target:
     - target: nsis

@@ -17,6 +17,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
+      // The spellchecker can download dictionaries from a remote server.
+      spellcheck: false,
     },
     show: false,
     backgroundColor: '#1A1A1E',

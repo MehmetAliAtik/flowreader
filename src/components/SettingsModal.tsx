@@ -169,7 +169,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
                   <Toggle checked={smartPause} onChange={setSmartPause} />
                 </Row>
 
-                <Row label="Bionic Reading" hint="Bold the first portion of each word">
+                <Row label="Bold prefix" hint="Bold the first portion of each word">
                   <Toggle checked={bionicReading} onChange={setBionicReading} />
                 </Row>
               </Section>

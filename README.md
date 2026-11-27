@@ -96,7 +96,7 @@ The builds are not code-signed, so Windows SmartScreen may warn about an unknown
 
 - **Your files and reading data stay on your computer.** An imported PDF is copied into the app's user-data folder (under `%APPDATA%` on Windows). Extracted text, covers, progress, bookmarks, notes, reading sessions and settings are stored there in a local IndexedDB database.
 - **No accounts, analytics or telemetry** are built into FlowReader.
-- **Fonts come from Google Fonts.** The app requests its fonts from `fonts.googleapis.com` (see [`src/styles/fonts.css`](src/styles/fonts.css)), so Google receives the usual web request information, such as your IP address.
+- **No network requests of its own.** Fonts are bundled with the app (since 1.0.1; version 1.0.0 loaded them from Google Fonts) and the spellchecker, which can download dictionaries, is turned off.
 - **Deleting a book** removes it and its reading data from the library, but currently leaves the copied PDF in the `books` folder inside the user-data folder.
 
 These statements describe FlowReader's own source code. The network behaviour of the underlying Electron and Chromium runtime has not been audited.
@@ -151,7 +151,7 @@ FlowReader, PDF kitaplarınızı ekranda sabit bir noktada kelime kelime göster
 - **İndirme:** Windows (x64) kurulum dosyası ve taşınabilir sürüm [Releases sayfasında](https://github.com/MehmetAliAtik/flowreader/releases/latest). Dosyalar kod imzalı olmadığı için Windows SmartScreen uyarı gösterebilir.
 - **Özellikler:** ayarlanabilir hız, akıllı duraklama, kelime başlarını kalın gösterme seçeneği, yer imleri ve notlar, okuma istatistikleri ve günlük hedef, açık ve koyu tema.
 - **Sınırlamalar:** yalnızca PDF desteklenir, OCR yoktur. Tek sayfalık PDF'lerden şu anda metin alınamıyor ve sürükle-bırak ile içe aktarma çalışmıyor.
-- **Gizlilik:** PDF'leriniz ve okuma verileriniz bilgisayarınızda kalır; hesap, analitik veya telemetri yoktur. Yazı tipleri Google Fonts'tan istenir. Bir kitabı silmek, uygulamanın veri klasörüne kopyalanan PDF dosyasını silmez.
+- **Gizlilik:** PDF'leriniz ve okuma verileriniz bilgisayarınızda kalır; hesap, analitik veya telemetri yoktur. Yazı tipleri uygulamayla birlikte gelir. Bir kitabı silmek, uygulamanın veri klasörüne kopyalanan PDF dosyasını silmez.
 - **Lisans:** [MIT](LICENSE). Üçüncü taraf bildirimleri: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 Uygulamanın arayüzü İngilizcedir.
