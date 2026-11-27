@@ -14,8 +14,8 @@
     "url": "git+https://github.com/MehmetAliAtik/flowreader.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Mehmet Ali Atik",
+  "license": "MIT",
   "type": "module",
   "bugs": {
     "url": "https://github.com/MehmetAliAtik/flowreader/issues"

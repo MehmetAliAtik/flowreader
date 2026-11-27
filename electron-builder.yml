@@ -6,6 +6,8 @@ directories:
 files:
   - dist
   - dist-electron
+  - LICENSE
+  - THIRD-PARTY-NOTICES.md
 win:
   target:
     - target: nsis
